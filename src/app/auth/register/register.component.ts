@@ -1,4 +1,8 @@
 import { Component, OnInit } from '@angular/core';
+import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {AuthService} from '../../services/auth.service';
+import {Router} from '@angular/router';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-register',
@@ -7,9 +11,45 @@ import { Component, OnInit } from '@angular/core';
 })
 export class RegisterComponent implements OnInit {
 
-  constructor() { }
+  registroForm: FormGroup;
+
+  constructor(
+    private formBuilder: FormBuilder,
+    private authService: AuthService,
+    private router: Router
+  ) { }
 
   ngOnInit() {
+    this.registroForm = this.formBuilder.group({
+      nombre: ['', Validators.required],
+      correo: ['', [Validators.required, Validators.email]],
+      password: ['', Validators.required]
+    });
   }
 
+  crearUsuario() {
+    if (this.registroForm.invalid) {return; }
+
+    Swal.fire({
+      title: 'Espere porfavor',
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
+    const {nombre, correo, password} = this.registroForm.value;
+    this.authService.crearUsuario(nombre, correo, password)
+      .then(credenciales => {
+        console.log(credenciales);
+        Swal.close();
+        this.router.navigate(['/']);
+      })
+      .catch(reason => {
+        console.log(reason);
+        Swal.fire({
+          icon: 'error',
+          title: 'Oops...',
+          text: reason.message,
+        });
+      });
+  }
 }
